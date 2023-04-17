@@ -2,14 +2,8 @@ import fs from "fs";
 import jsdom from "jsdom";
 const { JSDOM } = jsdom;
 import PicoController from "./picocontroller.js";
-import { socketConnectAndGetRequester, socketSend } from './socket/pico_client.js';
+import { socketConnectAndGetRequester, socketSend } from './socket/mock_client.js';
 
-// const { connectPromise } = socketConnect();
-// let connection = null;
-// let requester = null;
-// connectPromise.then((conn) => {
-//   connection = conn;
-// });
 let requester = null;
 socketConnectAndGetRequester().then((req) => {
   console.log("requester acquired");
@@ -22,13 +16,10 @@ controller.onSend = (data) => {
   if (requester) {
     socketSend(requester, data, controller.onReceive.bind(controller));
   } else {
-    // connectPromise.then((conn) => socketSend(conn, data, controller.onReceive.bind(controller)));
+    console.warn("[PicoGym] Tried to send data, but connection not ready");
+    setTimeout(()=>controller.onSend(data), 200);
   }
 }
-
-// setTimeout(controller.onSend, 3000);
-// setTimeout(controller.onSend, 3500);
-// setTimeout(controller.onSend, 4000);
 
 let dummyUrl = "http://localhost";
 class CustomResourceLoader extends jsdom.ResourceLoader {

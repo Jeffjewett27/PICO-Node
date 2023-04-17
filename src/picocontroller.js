@@ -72,7 +72,7 @@ export default class PicoController {
 
     sendGameData() {
         if (this.verbose) console.log("[PicoGym] Sent Game Data");
-        // this.block();
+        this.block();
         this.onSend(this.gameData);
         this.gameData = { messages: [] };
     }
