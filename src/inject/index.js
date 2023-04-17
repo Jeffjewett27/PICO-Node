@@ -1,14 +1,14 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
-const Communic8 = require('./communic8.js');
-// const Communic8 = require('communic8');
+import { RPC, ArgTypes, connect} from './communic8.js';
+// import Communic8 from 'communic8';
 
 var DateStartTime = Date.now();
 var OldDateNowFunc = Date.now;
 Date.now = () => {
     var curDate = OldDateNowFunc();
     var diff = curDate - DateStartTime;
-    return DateStartTime + 1 * diff;
+    return DateStartTime + 32 * diff;
 }
 navigator.getGamepads = () => [];
 
@@ -22,20 +22,20 @@ setInterval(() => {
     funcTracker = {};
 }, 1000);
 
-console.log("test");
+console.log("test2");
 
-var add = Communic8.RPC({
+var add = RPC({
     id: 0, // a unique byte to identify the RPC
     input: [
-        Communic8.ArgTypes.Byte,
-        Communic8.ArgTypes.Byte
+        ArgTypes.Byte,
+        ArgTypes.Byte
     ],
     output: [
-        Communic8.ArgTypes.Byte
+        ArgTypes.Byte
     ]
 });
 
-var bridge = Communic8.connect();
+var bridge = connect();
 var isPaused = false;
 var count = 0;
 var isInitialized = false;
@@ -66,6 +66,22 @@ bridge.send(add(7, 4)).then((function(result) {
     // setInterval(request_calculation, 2);
     // request_calculation();
 }));
+
+picoController.onBlockChange = (val, verbose=false) => {
+    if (val) {
+        if (verbose) console.log("[PicoGym] Paused PICO-8");
+        Browser.mainLoop.pause();
+    } else {
+        if (verbose) console.log("[PicoGym] Resumed PICO-8");
+        Browser.mainLoop.resume();
+    }
+}
+
+setTimeout(() => {
+    Browser.mainLoop.pause();
+    Browser.mainLoop.timingMode = 2;
+    Browser.mainLoop.resume();
+}, 30);
 // setInterval(request_calculation, 100);
 // console.dir(bridge);
 // setInterval(() => {
