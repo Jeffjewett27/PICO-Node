@@ -46,7 +46,7 @@ class CustomResourceLoader extends jsdom.ResourceLoader {
               js = js.replace(/function mkdir_0((.*(\n|\r|\r\n)){29})/, 
                 `console.log("Could not load filesystem");`);
               let buf = Buffer.from(js, 'utf8');
-              fs.writeFile("standalone.js", buf, ()=>{});
+              fs.writeFile("dist/standalone.js", buf, ()=>{});
               resolve(buf);
             })
         }
@@ -69,7 +69,7 @@ html = html
   //insert script before other script
   .replace(/\s(?=\<script)/, `<script type="text/javascript" src="dist/main.js"></script>`);
   // .replace("var pico8_buttons", "//");
-fs.writeFile("standalone.html", html, ()=>{});
+fs.writeFile("dist/standalone.html", html, ()=>{});
 
 const dom = new JSDOM(html, {
     url: dummyUrl,
