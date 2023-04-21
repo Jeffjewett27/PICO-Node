@@ -1,14 +1,13 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
-import { RPC, ArgTypes, connect} from './communic8.js';
-// import Communic8 from 'communic8';
 
+///Environment Overrides
 var DateStartTime = Date.now();
 var OldDateNowFunc = Date.now;
 Date.now = () => {
     var curDate = OldDateNowFunc();
     var diff = curDate - DateStartTime;
-    return DateStartTime + 32 * diff;
+    return DateStartTime + 32 * diff; //speed up time
 }
 navigator.getGamepads = () => [];
 
@@ -18,54 +17,30 @@ document.trackFunc = function trackFunc(name) {
     funcTracker[name]++;
 }
 setInterval(() => {
-    console.log(funcTracker);
+    if (Object.keys(funcTracker).length)
+        console.log(funcTracker);
     funcTracker = {};
 }, 1000);
 
-console.log("test2");
-
-var add = RPC({
-    id: 0, // a unique byte to identify the RPC
-    input: [
-        ArgTypes.Byte,
-        ArgTypes.Byte
-    ],
-    output: [
-        ArgTypes.Byte
-    ]
-});
-
-var bridge = connect();
-var isPaused = false;
-var count = 0;
-var isInitialized = false;
-var numSent = 0;
-
-function request_calculation() {
-    if (numSent > 1) return;
-    console.log("sent query");
-    numSent++;
-    bridge.send(add(2, 3)).then((function(result) {
-        document.trackFunc('lua_msg');
-        isInitialized = true;
-        count++;
-        numSent--;
-        console.log(`result: ${result[0]}, count: ${count}`); // => "2 + 3 = 5"
-        request_calculation();
-    }));
+var oldConsoleLog = console.log;
+const msgPattern = /\[(\w+)\]\s*(.*)/;
+console.log = (msg) => {
+    let match = msg.match(msgPattern);
+    // oldConsoleLog("MATCH")
+    // oldConsoleLog(match)
+    if (match) {
+        let type = match[1];
+        let data = match[2];
+        if (type != 'codo' && type != 'PicoGym') 
+            picoController.queueGameMessage(type, data);
+        oldConsoleLog(msg);
+    }
 }
-document.request_calculation = request_calculation;
 
-bridge.send(add(7, 4)).then((function(result) {
-    isInitialized = true;
-    count++;
-    console.log(`result: ${result[0]}, count: ${count}`); // => "2 + 3 = 5"
-    // Browser.mainLoop.pause();
-    // Browser.mainLoop.timingMode = 2;
-    // Browser.mainLoop.resume();
-    // setInterval(request_calculation, 2);
-    // request_calculation();
-}));
+console.log("[Index.js] Run");
+
+document.getElementById("codo_textarea").display = "block";
+document.getElementById("codo_textarea").value = "block";
 
 picoController.onBlockChange = (val, verbose=false) => {
     if (val) {
@@ -74,6 +49,23 @@ picoController.onBlockChange = (val, verbose=false) => {
     } else {
         if (verbose) console.log("[PicoGym] Resumed PICO-8");
         Browser.mainLoop.resume();
+    }
+}
+
+window.gameMessage = "default message";
+setTimeout(()=>{
+    window.gameMessage = "changed message";
+}, 6000);
+
+window.gpioHook = function($0, $1) {
+    if (!$1 || $0 < 124) return;
+    console.log(`gpiohook: ${$0}, ${$1}`)
+    if ($0 == 127) { //poke(0x5fff,_) -> initialize hook
+        picoController.initialize();
+    } else if ($0 == 126) { //poke(0x5ffe,_) -> update hook (start of frame)
+        picoController.getCommands();
+    } else if ($0 == 125) { //poke(0x5ffd,_) -> draw hook (end of frame)
+        picoController.queueScreenAndSend(Module.canvas.toDataURL());
     }
 }
 

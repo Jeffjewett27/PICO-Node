@@ -1,3 +1,5 @@
+import picointerface from "./picointerface.js";
+
 export default class PicoController {
     constructor(verbose=false) {
         this.verbose = verbose;
@@ -6,10 +8,18 @@ export default class PicoController {
         this.initializationStatus = false;
         this.blockingStatus = false;
         this.queuedCommands = [];
-        this.gameData = {}
+        this.gameData = this.gameData = { 
+            event: 'step',
+            observation: {},
+            messages: [] 
+        };
         this.onSend = (_) => {};
         this.onReceiveCommands = (_) => {};
         this.onBlockChange = (_) => {}
+        this.rpcMap = picointerface(this);
+
+        this.maxMissedFrames = Infinity;
+        this.missedFrames = 0;
     }
 
     get isInitialized() {
@@ -19,6 +29,19 @@ export default class PicoController {
     initialize() {
         if (this.verbose) console.log("[PicoGym] PICO-8 initialized");
         this.initializationStatus = true;
+        this.onSend({
+            event: 'init'
+        })
+    }
+
+    reset() {
+        if (this.verbose) console.log("[PicoGym] PICO-8 reset");
+        this.onSend({
+            event: 'reset',
+            observation: {
+                'screen': ""
+            }
+        })
     }
 
     get isBlocking() {
@@ -37,14 +60,16 @@ export default class PicoController {
 
     popInputBuffer() {
         if (this.inputBuffer.length == 0) {
+            this.missedFrames++;
+            if (this.missedFrames >= this.maxMissedFrames) this.block();
             console.error("[PicoGym] A frame without input slipped by.");
             return 0;
         }
         return this.inputBuffer.shift();
     }
 
-    getController() {
-        if (!this.isInitialized) return 0;
+    getController(button_i=0) {
+        if (!this.isInitialized || button_i > 0) return 0;
         
         let input = this.popInputBuffer();
         if (this.verbose) console.log(`[PicoGym] Processing Controls: ${input}`);
@@ -54,27 +79,31 @@ export default class PicoController {
     getCommands() {
         if (this.verbose && this.queuedCommands.length > 0)
             console.log(`[PicoGym] Processing Requests: ${this.queuedCommands}`);
-        if (!this.isInitialized) {
-          this.initialize();
-        }
-        return this.queuedCommands;
+        
+        let serialized = this.queuedCommands.map((val)=>Object.values(val).join(",")).join(";");
+        this.queuedCommands = [];
+        return serialized;
     }
       
-    queueGameMessage(message) {
-        if (this.verbose) console.log(`[PicoGym] Queued Game Message: ${JSON.stringify(message)}`);
-        this.gameData.messages.push(message);
+    queueGameMessage(type, message) {
+        if (this.verbose) console.log(`[PicoGym] Queued Game Message: ${type}=${message}`);
+        this.gameData[type] = message;
     }
       
     queueScreen(screen) {
         if (this.verbose) console.log("[PicoGym] Queue Screen");
-        this.gameData.screen = screen;
+        this.gameData.observation.screen = screen;
     }
 
     sendGameData() {
         if (this.verbose) console.log("[PicoGym] Sent Game Data");
         this.block();
         this.onSend(this.gameData);
-        this.gameData = { messages: [] };
+        this.gameData = { 
+            event: 'step',
+            observation: {},
+            messages: []
+        };
     }
 
     queueScreenAndSend(screen) {
@@ -88,12 +117,22 @@ export default class PicoController {
     }
 
     onReceive(data) {
-        if (data.input) {
+        console.log("on receive")
+        console.log(data)
+        if ('input' in data) {
             this.inputBuffer.push(data.input);
-            if (this.isBlocking) this.unblock();
         }
+        if (data.step) this.gameData.step = data.step;
         if (Array.isArray(data.commands)) {
-            this.onReceiveCommands(data.commands);
+            // this.onReceiveCommands(data.commands);
+            // data.commands.forEach(element => {
+            //     if (element.type == 'reset') this.reset()
+            // });
+            data.commands.forEach((command) => {
+                console.log(command);
+                if (command.type) this.queuedCommands.push(command);
+            })
         }
+        if (this.isBlocking) this.unblock();
     }
 }

@@ -2,7 +2,7 @@ import fs from "fs";
 import jsdom from "jsdom";
 const { JSDOM } = jsdom;
 import PicoController from "./picocontroller.js";
-import { socketConnectAndGetRequester, socketSend } from './socket/mock_client.js';
+import { socketConnectAndGetRequester, socketSend } from './socket/pico_client.js';
 
 let requester = null;
 socketConnectAndGetRequester().then((req) => {
@@ -10,7 +10,7 @@ socketConnectAndGetRequester().then((req) => {
   requester = req
 }).catch((err) => console.error(err));
 
-const controller = new PicoController(false);
+const controller = new PicoController(true);
 
 controller.onSend = (data) => {
   if (requester) {
@@ -30,12 +30,17 @@ class CustomResourceLoader extends jsdom.ResourceLoader {
             return fs.promises.readFile("./dist/null.js");
         }
 
-        if (url === `${dummyUrl}/testjs.js`) {
+        if (url === `${dummyUrl}/celeste.js`) {
             return new Promise((resolve, _) => {
-              let js = fs.readFileSync("./testjs.js").toString();
+              let js = fs.readFileSync("./carts/celeste.js").toString();
               //remove problematic filesystem function
               js = js.replace(/function mkdir_0((.*(\n|\r|\r\n)){29})/, 
                 `console.log("Could not load filesystem");`);
+              js = js.replace("pico8_gpio[$0] = $1", 
+                `{ window.gpioHook($0, $1); pico8_gpio[$0] = $1; }`);
+              js = js.replace("val = pico8_buttons[button_i];", 
+                `{ pico8_buttons[button_i] = window.picoController.getController(button_i); val = pico8_buttons[button_i]; }`);
+              js = js.replace("window.location.hostname", "window.picoController.getCommands()");
               let buf = Buffer.from(js, 'utf8');
               fs.writeFile("dist/standalone.js", buf, ()=>{});
               resolve(buf);
@@ -48,7 +53,7 @@ class CustomResourceLoader extends jsdom.ResourceLoader {
 
 const resourceLoader = new CustomResourceLoader();
   
-let html = fs.readFileSync("./carts/testjs.html").toString();
+let html = fs.readFileSync("./carts/celeste.html").toString();
 console.log("AudioContext".replace(/AudioContext/, 'ferret'));
 html = html
   //AudioContext is not defined, and was used to trigger game start

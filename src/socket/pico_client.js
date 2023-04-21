@@ -13,7 +13,7 @@ function createPicoRequester(sender) {
     const requester = {
         incoming: null,
         pico(data) {
-            console.log("TRY SEND")
+            console.log(`[Client] ${data}`);
             // new incoming message on the way
             const incoming = requester.incoming = new Deferred()
             sender(data)
@@ -22,7 +22,7 @@ function createPicoRequester(sender) {
     }
     
     return requester
-  }
+}
 
 export function socketConnectAndGetRequester() {
     logConnecting('Websocket', `ws://${host}:${port}`)
@@ -45,13 +45,13 @@ export function socketConnectAndGetRequester() {
     })
 }
 
-export function socketSend(requester, msg, callback) {
+export function socketSend(requester, picoOutput, callback) {
     // console.log("SOCKET SEND")
     try {
         // const requester = createPicoRequester(data => connection.sendUTF(data))
         // connection.on('message', message => requester.incoming.resolve(message))
 
-        const sendData = JSON.stringify({ pico: msg })
+        const sendData = JSON.stringify(picoOutput)
         requester.pico(sendData).then((message) => {
             console.log(`[Client] Received ${message.utf8Data}`);
             const data = JSON.parse(message.utf8Data)
