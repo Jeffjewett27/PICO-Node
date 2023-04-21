@@ -5,19 +5,21 @@ import PicoController from "./picocontroller.js";
 import { socketConnectAndGetRequester, socketSend } from './socket/pico_client.js';
 
 let requester = null;
+let connectionAttempts = 5;
 socketConnectAndGetRequester().then((req) => {
   console.log("requester acquired");
   requester = req
 }).catch((err) => console.error(err));
 
-const controller = new PicoController(true);
+const controller = new PicoController(false);
 
 controller.onSend = (data) => {
   if (requester) {
+    console.log("[SENDING] test");
     socketSend(requester, data, controller.onReceive.bind(controller));
   } else {
     console.warn("[PicoGym] Tried to send data, but connection not ready");
-    setTimeout(()=>controller.onSend(data), 200);
+    if (connectionAttempts-->0) setTimeout(()=>controller.onSend(data), 1000);
   }
 }
 
@@ -54,7 +56,6 @@ class CustomResourceLoader extends jsdom.ResourceLoader {
 const resourceLoader = new CustomResourceLoader();
   
 let html = fs.readFileSync("./carts/celeste.html").toString();
-console.log("AudioContext".replace(/AudioContext/, 'ferret'));
 html = html
   //AudioContext is not defined, and was used to trigger game start
   .replace("AudioContext();", 'Object(); p8_run_cart();') 

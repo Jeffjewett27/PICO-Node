@@ -1,5 +1,3 @@
-import picointerface from "./picointerface.js";
-
 export default class PicoController {
     constructor(verbose=false) {
         this.verbose = verbose;
@@ -11,12 +9,10 @@ export default class PicoController {
         this.gameData = this.gameData = { 
             event: 'step',
             observation: {},
-            messages: [] 
         };
         this.onSend = (_) => {};
         this.onReceiveCommands = (_) => {};
         this.onBlockChange = (_) => {}
-        this.rpcMap = picointerface(this);
 
         this.maxMissedFrames = Infinity;
         this.missedFrames = 0;
@@ -101,8 +97,7 @@ export default class PicoController {
         this.onSend(this.gameData);
         this.gameData = { 
             event: 'step',
-            observation: {},
-            messages: []
+            observation: {}
         };
     }
 

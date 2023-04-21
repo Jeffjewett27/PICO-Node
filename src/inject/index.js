@@ -1,6 +1,8 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
+(typeof window !== 'undefined' ? window : global).pico8_gpio = new Array(128).fill(0);
+
 ///Environment Overrides
 var DateStartTime = Date.now();
 var OldDateNowFunc = Date.now;
@@ -33,8 +35,8 @@ console.log = (msg) => {
         let data = match[2];
         if (type != 'codo' && type != 'PicoGym') 
             picoController.queueGameMessage(type, data);
+        }
         oldConsoleLog(msg);
-    }
 }
 
 console.log("[Index.js] Run");
