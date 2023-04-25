@@ -9,7 +9,7 @@ const argv = yargs(hideBin(process.argv))
 
 console.log(argv);
 export const { 
-    port = 5000, 
+    port = 5001, 
     host = '0.0.0.0',
     iters = 10000,
     repeat = 3

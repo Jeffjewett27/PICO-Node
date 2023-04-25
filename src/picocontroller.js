@@ -8,7 +8,7 @@ export default class PicoController {
         this.queuedCommands = [];
         this.gameData = this.gameData = { 
             event: 'step',
-            observation: {},
+            screen: ''
         };
         this.onSend = (_) => {};
         this.onReceiveCommands = (_) => {};
@@ -34,9 +34,7 @@ export default class PicoController {
         if (this.verbose) console.log("[PicoGym] PICO-8 reset");
         this.onSend({
             event: 'reset',
-            observation: {
-                'screen': ""
-            }
+            screen: ''
         })
     }
 
@@ -88,7 +86,7 @@ export default class PicoController {
       
     queueScreen(screen) {
         if (this.verbose) console.log("[PicoGym] Queue Screen");
-        this.gameData.observation.screen = screen;
+        this.gameData.screen = screen;
     }
 
     sendGameData() {
@@ -97,7 +95,7 @@ export default class PicoController {
         this.onSend(this.gameData);
         this.gameData = { 
             event: 'step',
-            observation: {}
+            screen: ''
         };
     }
 

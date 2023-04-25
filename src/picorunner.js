@@ -3,6 +3,16 @@ import jsdom from "jsdom";
 const { JSDOM } = jsdom;
 import PicoController from "./picocontroller.js";
 import { socketConnectAndGetRequester, socketSend } from './socket/pico_client.js';
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+const argv = yargs(hideBin(process.argv))
+    .option('cart', {
+    alias: 'c',
+    type: 'string',
+    description: "Exported PICO-8 cart name. Ex: 'celeste' loads 'celeste.html' and 'celest.js"
+  }).argv
+
+let { cart = 'celeste' } = argv; 
 
 let requester = null;
 let connectionAttempts = 5;
@@ -32,9 +42,9 @@ class CustomResourceLoader extends jsdom.ResourceLoader {
             return fs.promises.readFile("./dist/null.js");
         }
 
-        if (url === `${dummyUrl}/celeste.js`) {
+        if (url === `${dummyUrl}/${cart}.js`) {
             return new Promise((resolve, _) => {
-              let js = fs.readFileSync("./carts/celeste.js").toString();
+              let js = fs.readFileSync(`./carts/${cart}.js`).toString();
               //remove problematic filesystem function
               js = js.replace(/function mkdir_0((.*(\n|\r|\r\n)){29})/, 
                 `console.log("Could not load filesystem");`);
@@ -55,7 +65,7 @@ class CustomResourceLoader extends jsdom.ResourceLoader {
 
 const resourceLoader = new CustomResourceLoader();
   
-let html = fs.readFileSync("./carts/celeste.html").toString();
+let html = fs.readFileSync(`./carts/${cart}.html`).toString();
 html = html
   //AudioContext is not defined, and was used to trigger game start
   .replace("AudioContext();", 'Object(); p8_run_cart();') 
