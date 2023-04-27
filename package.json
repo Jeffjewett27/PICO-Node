@@ -35,7 +35,6 @@
     "@babel/node": "^7.20.7",
     "canvas": "^2.11.2",
     "chalk": "^5.2.0",
-    "communic8": "0.0.1",
     "core-js": "^3.30.0",
     "jsdom": "^21.1.1",
     "regenerator-runtime": "^0.13.11",

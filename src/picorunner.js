@@ -5,6 +5,13 @@ import PicoController from "./picocontroller.js";
 import { socketConnectAndGetRequester, socketSend } from './socket/pico_client.js';
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
+import process from 'process'
+import * as url from 'url';
+
+const cwd = url.fileURLToPath(new URL('..', import.meta.url));
+process.chdir(cwd);
+
+
 const argv = yargs(hideBin(process.argv))
     .option('cart', {
     alias: 'c',
@@ -15,7 +22,7 @@ const argv = yargs(hideBin(process.argv))
 let { cart = 'celeste' } = argv; 
 
 let requester = null;
-let connectionAttempts = 5;
+let connectionAttempts = 500;
 socketConnectAndGetRequester().then((req) => {
   console.log("requester acquired");
   requester = req
