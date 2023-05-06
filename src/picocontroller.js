@@ -16,6 +16,8 @@ export default class PicoController {
 
         this.maxMissedFrames = Infinity;
         this.missedFrames = 0;
+        this.skipframes = 0;
+        this.numFramesSkipped = 0;
     }
 
     get isInitialized() {
@@ -59,6 +61,11 @@ export default class PicoController {
             console.error("[PicoGym] A frame without input slipped by.");
             return 0;
         }
+        if (this.skipframes > 0) {
+            return this.inputBuffer[0]
+        }
+        // if (this.skipframes > 0) {
+        // }
         return this.inputBuffer.shift();
     }
 
@@ -90,13 +97,20 @@ export default class PicoController {
     }
 
     sendGameData() {
+        if (this.skipframes > 0) {
+            this.skipframes--;
+            this.numFramesSkipped++;
+            return;
+        }
         if (this.verbose) console.log("[PicoGym] Sent Game Data");
         this.block();
         this.onSend(this.gameData);
         this.gameData = { 
             event: 'step',
-            screen: ''
+            screen: '',
+            skipped: this.numFramesSkipped
         };
+        this.numFramesSkipped = 0;
     }
 
     queueScreenAndSend(screen) {
@@ -114,6 +128,10 @@ export default class PicoController {
         console.log(data)
         if ('input' in data) {
             this.inputBuffer.push(data.input);
+            this.skipframes = data.skipframes || 0;
+            // for (let i = 0; i < this.skipframes; i++) {
+            //     this.inputBuffer.push(data.input);
+            // }
         }
         if (data.step) this.gameData.step = data.step;
         if (Array.isArray(data.commands)) {
