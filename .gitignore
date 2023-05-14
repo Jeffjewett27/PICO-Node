@@ -3,3 +3,4 @@ node_modules
 *.log
 carts
 dist/standalone.*
+pico_processes.log

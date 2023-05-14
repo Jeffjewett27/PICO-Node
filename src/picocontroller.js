@@ -1,3 +1,5 @@
+import { id } from './socket/config.js'
+
 export default class PicoController {
     constructor(verbose=false) {
         this.verbose = verbose;
@@ -28,7 +30,8 @@ export default class PicoController {
         if (this.verbose) console.log("[PicoGym] PICO-8 initialized");
         this.initializationStatus = true;
         this.onSend({
-            event: 'init'
+            event: 'init',
+            id: id
         })
     }
 
